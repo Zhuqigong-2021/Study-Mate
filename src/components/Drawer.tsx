@@ -1,3 +1,4 @@
+"use client";
 import { usePathname } from "next/navigation";
 import React, { useState } from "react";
 import {
@@ -12,6 +13,7 @@ import { Button } from "./ui/button";
 import { Menu } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
+import AddEditNoteDialog from "./AddEditNoteDialog";
 
 const Drawer = () => {
   const pathname = usePathname();
@@ -68,6 +70,10 @@ const Drawer = () => {
               Add a Note
             </Button>
           )}
+          <AddEditNoteDialog
+            open={showAddEditNoteDialog}
+            setOpen={setShowAddEditNoteDialog}
+          />
         </div>
       </SheetContent>
     </Sheet>
