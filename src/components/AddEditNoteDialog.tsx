@@ -50,11 +50,12 @@ export default function AddEditNoteDialog({
     try {
       const response = await fetch("/api/notes", {
         method: "DELETE",
-        body: JSON.stringify({ id: noteToEdit.userId }),
+        body: JSON.stringify({ id: Number(noteToEdit.id) }),
       });
       if (!response.ok) throw Error("Status code:" + response.status);
       setOpen(false);
       toast.success("You have just delted a note!");
+      router.refresh();
     } catch (error) {
       toast.error("something went wrong. Please try again");
     } finally {
@@ -86,6 +87,7 @@ export default function AddEditNoteDialog({
       router.refresh();
       setOpen(false);
     } catch (error) {
+      console.log(error);
       toast("something went wrong. Please  try again");
     }
   }

@@ -22,10 +22,10 @@ model Question {
   id           Int      @id @default(autoincrement())
   questionTitle String
   noteId       Int
-  note         Note     @relation(fields: [noteId], references: [id])
+  note         Note     @relation(fields: [noteId], references: [id] ,onDelete: Cascade)
   choices      Choice[]
 
-  @@unique([noteId])
+ 
 }
 
 model Choice {
@@ -33,7 +33,6 @@ model Choice {
   content    String
   answer     Boolean  @default(false)
   questionId Int
-  question   Question @relation(fields: [questionId], references: [id])
+  question   Question @relation(fields: [questionId], references: [id],onDelete: Cascade)
 
-  @@unique([questionId])
 }

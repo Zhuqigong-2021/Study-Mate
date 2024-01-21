@@ -12,7 +12,7 @@ const NotesPage = async () => {
   const { userId } = auth();
   if (!userId) throw Error("userId undefined");
   const allNotes = await prisma.note.findMany({ where: { userId } });
-  console.log(JSON.stringify(allNotes));
+  // console.log(JSON.stringify(allNotes));
 
   return (
     <div className=" grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

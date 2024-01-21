@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const ChoiceSchema = z.object({
-  id: z.string().optional(),
+  id: z.number().optional(),
   content: z.string().min(1, { message: "choice is required" }),
   answer: z.boolean().default(false),
 });
@@ -12,7 +12,7 @@ export const createQuestionSchema = z.object({
 });
 
 export const updateQuestionSchema = z.object({
-  id: z.string().min(1, { message: "id is required" }),
+  id: z.number().min(1, { message: "id is required" }),
   questionTitle: z.string().min(1, { message: "question is required" }),
   choices: z.array(ChoiceSchema),
 });
@@ -28,11 +28,11 @@ export type CreateNoteSchema = z.infer<typeof createNoteSchema>;
 export type CreateQuestionSchema = z.infer<typeof createQuestionSchema>;
 
 export const deleteNoteSchema = z.object({
-  id: z.string().min(1),
+  id: z.number().min(1),
 });
 
 export const updateNoteSchema = z.object({
-  id: z.string().min(1),
+  id: z.number().min(1),
   title: z.string().optional(),
   description: z.string().optional(),
   questions: z.array(updateQuestionSchema).optional(),

@@ -19,7 +19,7 @@ const Note = ({ note }: NoteProps) => {
   const createUpdateAtTimestamp = (
     wasUpdated ? note.updatedAt : note.createdAt
   ).toDateString();
-  console.log("this is my note:" + note);
+
   return (
     <>
       <Card
