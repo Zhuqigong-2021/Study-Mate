@@ -59,7 +59,7 @@ export default function Navbar() {
             <Button
               onClick={() => setShowAddEditNoteDialog(true)}
               // onClick={addNote}
-              className="bg hidden scale-75 bg-red-500 md:flex lg:flex xl:flex "
+              className="bg hidden scale-75 bg-teal-500 md:flex lg:flex xl:flex "
             >
               <Plus size={20} />
             </Button>

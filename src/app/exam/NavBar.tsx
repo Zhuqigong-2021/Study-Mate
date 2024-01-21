@@ -5,15 +5,28 @@ import { Button } from "@/components/ui/button";
 import { UserButton } from "@clerk/nextjs";
 import { Globe, Menu, Plus } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import React, { useState } from "react";
 
 export default function Navbar() {
   const [showAddEditNoteDialog, setShowAddEditNoteDialog] = useState(false);
-  const pathname = usePathname();
+  // const addNote = async () => {
+  //   const response = await fetch("/api/notes", {
+  //     method: "POST",
+  //     body: JSON.stringify({
+  //       title: "CSA",
+  //       description: "this is my description",
+  //     }),
+  //   });
+  //   if (response.ok) {
+  //     alert("we succeed");
+  //   }
+  //   if (!response.ok) {
+  //     alert("we failed");
+  //   }
+  // };
   return (
     <>
-      <div className="absolute left-0 right-0 top-0 -z-10 bg-[rgba(255,255,255,0.15)] p-4 shadow-sm">
+      <div className="z-10 bg-white p-4 shadow">
         <div className="m-auto flex max-w-7xl flex-wrap items-center justify-between">
           <Link href="/notes">
             <div className="flex space-x-2">
@@ -27,39 +40,11 @@ export default function Navbar() {
               <Drawer />
             </div>
 
-            <div className="hidden items-center font-semibold md:flex md:space-x-5 lg:flex lg:space-x-14">
-              <Link
-                href="/notes"
-                className="uderline-offset-1 hover:scale-105 hover:text-teal-700"
-              >
-                note
-              </Link>
-              <Link
-                href="/wildcard"
-                className="uderline-offset-1 hover:scale-105 hover:text-teal-700"
-              >
-                wildcard
-              </Link>
-              <Link
-                href="/exam"
-                className="uderline-offset-1 hover:scale-105 hover:text-teal-700"
-              >
-                exam
-              </Link>
-              <Link
-                href="/review"
-                className="uderline-offset-1 hover:scale-105 hover:text-teal-700"
-              >
-                review
-              </Link>
-              {pathname == "/" && (
-                <Button
-                  className="rounded-full bg-white px-8 py-4 text-slate-800 hover:text-white"
-                  asChild
-                >
-                  <Link href="/notes">registration</Link>
-                </Button>
-              )}
+            <div className="hidden font-semibold md:flex md:space-x-5 lg:flex lg:space-x-5">
+              <Link href="/notes">note</Link>
+              <Link href="/wildcard">wildcard</Link>
+              <Link href="/exam">exam</Link>
+              <Link href="/review">review</Link>
             </div>
             <div className="hidden md:flex lg:flex xl:flex">
               <UserButton
@@ -71,6 +56,13 @@ export default function Navbar() {
                 }}
               />
             </div>
+            {/* <Button
+              onClick={() => setShowAddEditNoteDialog(true)}
+              // onClick={addNote}
+              className="bg hidden scale-75 bg-red-500 md:flex lg:flex xl:flex "
+            >
+              <Plus size={20} />
+            </Button> */}
           </div>
         </div>
       </div>

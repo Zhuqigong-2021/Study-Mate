@@ -75,7 +75,7 @@ const CreateQuestion = ({ params }: idProps) => {
   });
 
   async function onSubmit(data: CreateQuestionSchema) {
-    alert(JSON.stringify(data));
+    // alert(JSON.stringify(data));
     try {
       const response = await fetch("/api/notes", {
         method: "PUT",
