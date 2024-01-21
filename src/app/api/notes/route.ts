@@ -1,6 +1,8 @@
 import { auth } from "@clerk/nextjs";
 import prisma from "@/lib/db/prisma";
 import { createNoteSchema, deleteNoteSchema } from "@/lib/validation/note";
+import { getEmbed } from "@/lib/openai";
+import { notesIndex } from "@/lib/db/pinecone";
 
 export async function POST(req: Request) {
   try {
@@ -14,14 +16,37 @@ export async function POST(req: Request) {
     if (!userId) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const note = await prisma.note.create({
-      data: {
-        title,
-        description,
-        questions: { create: [] },
-        userId,
-      },
+
+    // const note = await prisma.note.create({
+    //   data: {
+    //     title,
+    //     description,
+    //     questions: { create: [] },
+    //     userId,
+    //   },
+    // });
+    const embedding = await getEmbedNote(title, description);
+
+    const note = await prisma.$transaction(async (tx) => {
+      const note = await tx.note.create({
+        data: {
+          title,
+          description,
+          questions: { create: [] },
+          userId,
+        },
+      });
+
+      await notesIndex.upsert([
+        {
+          id: note.id + "",
+          values: embedding,
+          metadata: { userId },
+        },
+      ]);
+      return note;
     });
+
     return Response.json({ note }, { status: 201 });
   } catch (error) {
     console.error(error);
@@ -89,6 +114,8 @@ export async function PUT(req: Request) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
     // Update the note's title
+    //----------/
+
     let updatedNote;
     updatedNote = await prisma.note.update({
       where: { id: existingNote.id },
@@ -98,7 +125,6 @@ export async function PUT(req: Request) {
       },
     });
 
-    // Update each question and its associated title and choices
     if (questions) {
       console.log("questions: " + JSON.stringify(questions));
       for (const updatedQuestion of questions) {
@@ -163,232 +189,110 @@ export async function PUT(req: Request) {
         }
       }
     }
-
     return Response.json({ updatedNote }, { status: 200 });
+    //---------------------------------------------//
   } catch (error) {
     console.error(error);
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-// export async function PUT(req: Request) {
-//   try {
-//     const body = await req.json();
-//     const { id, title, description, questions } = body;
-//     const existingNote = await prisma.note.findUnique({
-//       where: { id },
-//       include: {
-//         questions: {
-//           include: {
-//             choices: true,
-//           },
-//         },
-//       },
-//     });
-//     if (!existingNote) {
-//       return Response.json({ error: "Note is not found" }, { status: 404 });
-//     }
-//     const { userId } = auth();
-//     if (!userId || userId !== existingNote.userId) {
-//       return Response.json({ error: "Unauthorized" }, { status: 401 });
-//     }
-//     let updatedNote;
-//     updatedNote = await prisma.note.update({
-//       where: { id: Number(existingNote.id) },
-//       data: {
-//         title,
-//         description,
-//       },
-//     });
-//     if (questions) {
-//       for (const updatedQuestion of questions) {
-//         const existingQuestion = existingNote.questions.find(
-//           (q) => q.id === updatedQuestion.id,
-//         );
-//         if (existingQuestion) {
-//           await prisma.question.update({
-//             where: { id: Number(existingQuestion?.id) },
-//             data: {
-//               questionTitle: updatedQuestion.questionTitle,
-//             },
-//           });
+//pinecone part
+//    const embedding = await getEmbedNote(title, description);
 
-//           for (const updatedChoice of updatedQuestion.choices) {
-//             const existingChoice = existingQuestion.choices.find(
-//               (c) => c.id === updatedChoice.id,
-//             );
+//    const note: any = await prisma.$transaction(async (tx) => {
+//      // Create or update the note
+//      const existingNote = await tx.note.findUnique({
+//        where: { id: id }, // Specify the noteId if you have it
+//        include: { questions: { include: { choices: true } } },
+//      });
 
-//             if (existingChoice) {
-//               await prisma.choice.update({
-//                 where: { id: existingChoice.id },
-//                 data: {
-//                   content: updatedChoice.content,
-//                   answer: updatedChoice.answer,
-//                 },
-//               });
-//             }
-//           }
-//         } else {
-//           updatedNote = await prisma.note.update({
-//             where: { id: Number(existingNote.id) },
-//             data: {
-//               title,
-//               description,
-//               questions: {
-//                 create: [
-//                   {
-//                     questionTitle: questions[0].questionTitle,
-//                     choices: {
-//                       create: questions[0].choices,
-//                     },
-//                   },
-//                 ],
-//               },
-//               userId,
-//             },
-//           });
-//         }
-//       }
-//     }
-//     return Response.json({ updatedNote }, { status: 200 });
-//   } catch (error) {
-//     console.error(error);
-//     return Response.json({ error: "Internal server error" }, { status: 500 });
-//   }
-// }
+//      if (existingNote) {
+//        // Update the note's title and description
+//        const updatedNote = await tx.note.update({
+//          where: { id: existingNote.id },
+//          data: {
+//            title,
+//            description,
+//          },
+//        });
 
-// export async function DELETE(req: Request) {
-//   try {
-//     const body = await req.json();
-//     // const parseResult = deleteNoteSchema.safeParse(body);
+//        // Update or create each question and its associated title and choices
+//        for (const updatedQuestion of existingNote.questions) {
+//          const existingQuestion = existingNote.questions.find(
+//            (q: QuestionType) => q.id === updatedQuestion.id,
+//          );
+//          if (existingQuestion) {
+//            // Update the question title
+//            await tx.question.update({
+//              where: {
+//                id: existingQuestion.id,
+//              },
+//              data: {
+//                questionTitle: updatedQuestion.questionTitle,
+//              },
+//            });
 
-//     // if (!parseResult.success) {
-//     //   console.error(parseResult.error);
-//     //   return Response.json({ error: "Invalid input" }, { status: 400 });
-//     // }
+//            // Update or create each choice
+//            for (const updatedChoice of updatedQuestion.choices) {
+//              const existingChoice = existingQuestion.choices.find(
+//                (c: ChoiceType) => c.id === updatedChoice.id,
+//              );
 
-//     const { id } = body;
-//     const numericId = Number(id); // Convert the id to a number
-//     if (isNaN(numericId)) {
-//       return Response.json({ error: "Invalid ID format" }, { status: 400 });
-//     }
-//     const note = await prisma.note.findUnique({
-//       where: { id: numericId },
-//       include: {
-//         questions: {
-//           include: {
-//             choices: true,
-//           },
-//         },
-//       },
-//     });
-//     if (!note) {
-//       return Response.json({ error: "Note not found" }, { status: 404 });
-//     }
-//     const { userId } = auth();
-//     if (!userId || userId !== note.userId) {
-//       return Response.json({ error: "Unauthorized" }, { status: 401 });
-//     }
-//     await prisma.$transaction([
-//       // Delete associated choices first
-//       prisma.choice.deleteMany({
-//         where: {
-//           question: {
-//             noteId: numericId,
-//           },
-//         },
-//       }),
-//       // Delete associated questions
-//       prisma.question.deleteMany({
-//         where: {
-//           noteId: numericId,
-//         },
-//       }),
-//       // Delete the note
-//       prisma.note.delete({
-//         where: {
-//           id: numericId,
-//           userId,
-//         },
-//       }),
-//     ]);
-//   } catch (error) {
-//     console.error(error);
-//     return Response.json({ error: "Internal server error" }, { status: 500 });
-//   }
-// }
+//              if (existingChoice) {
+//                await tx.choice.update({
+//                  where: {
+//                    id: existingChoice.id,
+//                  },
+//                  data: {
+//                    content: updatedChoice.content,
+//                    answer: updatedChoice.answer,
+//                  },
+//                });
+//              } else {
+//                // Create new choice
+//                await tx.choice.create({
+//                  data: {
+//                    content: updatedChoice.content,
+//                    answer: updatedChoice.answer,
+//                    questionId: existingQuestion.id,
+//                  },
+//                });
+//              }
+//            }
+//          } else {
+//            // Create new question
+//            await tx.question.create({
+//              data: {
+//                questionTitle: updatedQuestion.questionTitle,
+//                choices: {
+//                  create: updatedQuestion.choices,
+//                },
+//                noteId: updatedNote.id,
+//              },
+//            });
+//          }
+//        }
 
-// export async function DELETE(req: Request) {
-//   try {
-//     const body = await req.json();
-//     const parseResult = deleteNoteSchema.safeParse(body);
+//        return updatedNote;
+//      } else {
+//        // Handle case when the note doesn't exist
+//        // You might want to throw an error or handle it based on your requirements
+//        throw new Error("Note not found");
+//      }
+//    });
 
-//     if (!parseResult.success) {
-//       console.error(parseResult.error);
-//       return Response.json({ error: "Invalid input" }, { status: 400 });
-//     }
+//    // Upsert the note in the search index
+//    await notesIndex.upsert([
+//      {
+//        id: note.id + "",
+//        values: embedding,
+//        metadata: { userId },
+//      },
+//    ]);
 
-//     const { id } = body;
-//     // Ensuring that id is a number
-//     const numericId = Number(parseResult.data.id);
-
-//     if (isNaN(numericId)) {
-//       return Response.json({ error: "Invalid ID format" }, { status: 400 });
-//     }
-
-//     // Find the note to ensure it exists and belongs to the user
-//     const note = await prisma.note.findUnique({
-//       where: { id: id.toString() },
-//       include: {
-//         questions: true, // Include questions to check for their existence
-//       },
-//     });
-
-//     if (!note) {
-//       return Response.json({ error: "Note not found" }, { status: 404 });
-//     }
-
-//     const { userId } = auth();
-//     if (!userId || userId !== note.userId) {
-//       return Response.json({ error: "Unauthorized" }, { status: 401 });
-//     }
-
-//     // Perform deletion
-//     await prisma.$transaction(async (prisma) => {
-//       // Delete associated choices
-//       await prisma.choice.deleteMany({
-//         where: {
-//           question: {
-//             noteId: id.toString(),
-//           },
-//         },
-//       });
-
-//       // Delete associated questions
-//       await prisma.question.deleteMany({
-//         where: {
-//           noteId: id.toString(),
-//         },
-//       });
-
-//       // Finally, delete the note
-//       await prisma.note.delete({
-//         where: {
-//           id: id.toString(),
-//         },
-//       });
-//     });
-
-//     // Return a success response
-//     return Response.json(
-//       { message: "Note successfully deleted" },
-//       { status: 200 },
-//     );
-//   } catch (error) {
-//     console.error(error);
-//     return Response.json({ error: "Internal server error" }, { status: 500 });
-//   }
-// }
+//    return Response.json({ updatedNote: note }, { status: 200 });
+//--------------------//
 
 // Assuming you're using Express
 
@@ -432,4 +336,8 @@ export async function DELETE(req: Request) {
     console.error(error);
     return Response.json({ error: "Internal Error" }, { status: 500 });
   }
+}
+
+async function getEmbedNote(title: string, content: string | undefined) {
+  return getEmbed(title + "\n\n" + content ?? "");
 }

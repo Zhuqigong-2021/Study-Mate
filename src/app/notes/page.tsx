@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import { auth } from "@clerk/nextjs";
 import prisma from "@/lib/db/prisma";
 import Note from "@/components/Note";
-
+import AIbutton from "@/components/AIbutton";
 export const metadata: Metadata = {
   title: "Study Mate - Notes",
 };
@@ -23,6 +23,9 @@ const NotesPage = async () => {
           {"You don't have any note yet"}
         </div>
       )}
+      <div className="absolute bottom-4 right-4">
+        <AIbutton />
+      </div>
     </div>
   );
 };
