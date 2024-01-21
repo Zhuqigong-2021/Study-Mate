@@ -3,6 +3,7 @@ import { Metadata } from "next";
 import { auth } from "@clerk/nextjs";
 import prisma from "@/lib/db/prisma";
 import Note from "@/components/Note";
+import WildCardNote from "@/components/WildCardNote";
 
 export const metadata: Metadata = {
   title: "Study Mate - Notes",
@@ -16,7 +17,7 @@ const NotesPage = async () => {
 
   return (
     <div className=" grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {allNotes?.map((note) => <Note note={note} key={note.id} />)}
+      {allNotes?.map((note) => <WildCardNote note={note} key={note.id} />)}
 
       {allNotes.length === 0 && (
         <div className="col-span-full text-center">
