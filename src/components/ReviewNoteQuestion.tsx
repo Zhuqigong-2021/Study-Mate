@@ -15,7 +15,7 @@ export interface QuestionType {
   id: number;
   questionTitle: string;
   choices: ChoiceType[];
-  noteId: number;
+  noteId?: number;
 }
 export interface ChoiceType {
   id?: number;
@@ -27,7 +27,9 @@ export interface NoteProps {
 }
 const ReviewNoteQuestion = ({ note }: NoteProps) => {
   const [showAddEditNoteDialog, setShowAddEditNoteDialog] = useState(false);
+
   const router = useRouter();
+
   return (
     <>
       <Card
@@ -84,7 +86,7 @@ const ReviewNoteQuestion = ({ note }: NoteProps) => {
         <SquarePen
           className="right-30 absolute right-10 top-10"
           onClick={() => {
-            router.push(`/notes/&{note.id}/edit`);
+            router.push(`/notes/${note.id}/edit`);
           }}
         />
         <Button asChild className="absolute bottom-5 right-10">
